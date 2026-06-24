@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roue de la Fortune Ultra-Moderne</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1a1a1a;
+            padding: 10px 20px;
+            border-bottom: 1px solid #2d2d2d;
+            text-align: center;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.2); margin: 0; font-size: 22px; font-weight: 600; }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+            width: 100%;
+        }
+
+        /* Panneau de configuration */
+        .setup-panel {
+            background: #181818;
+            padding: 25px;
+            border-right: 1px solid #2d2d2d;
+            width: 45%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        /* Panneau de la roue */
+        .wheel-panel {
+            width: 55%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #111111;
+            position: relative;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* Mode Plein Écran appliqué sur le panneau de la roue */
+        .wheel-panel.fullscreen-active {
+            width: 100% !important;
+        }
+        .setup-panel.fullscreen-active {
+            width: 0% !important;
+            padding: 0 !important;
+            overflow: hidden;
+            border: none !important;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2d2d2d;
+            padding-bottom: 10px;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            background: #222;
+            color: #888;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active {
+            background: #00ff88;
+            color: #121212;
+        }
+        
+        .tab-content { 
+            display: none; 
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .tab-content.active { display: block; }
+
+        .wheel-outer-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: min(68vh, 520px);
+            height: min(68vh, 520px);
+        }
+
+        .arrow {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 36px solid #ff3366;
+            z-index: 15;
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6));
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 35px rgba(0,0,0,0.8);
+        }
+
+        /* Bouton d'activation du plein écran à droite de la roue */
+        .fs-toggle-btn {
+            position: absolute;
+            right: -60px;
+            background: #222;
+            border: 1px solid #333;
+            color: #fff;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .fs-toggle-btn:hover {
+            background: #00ff88;
+            color: #121212;
+            border-color: #00ff88;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00ff88, #00b3ff);
+            border: none;
+            color: #121212;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+            letter-spacing: 0.5px;
+        }
+        .btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(0,255,136,0.4);
+        }
+
+        .participant-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            background: #222;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #2d2d2d;
+        }
+
+        /* Interface Avancée Modernisée */
+        .global-controls {
+            display: flex;
+            background: #1f1f1f;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #2d2d2d;
+        }
+
+        .global-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .global-btn-group button {
+            background: #2a2a2a;
+            color: #ccc;
+            border: 1px solid #3d3d3d;
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.15s;
+        }
+        .global-btn-group button:hover {
+            background: #3a3a3a;
+            color: #fff;
+        }
+
+        .adv-row {
+            display: grid;
+            grid-template-columns: 1.4fr 1.1fr 0.9fr 0.9fr;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #222;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #2d2d2d;
+        }
+
+        input {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+        input[type="color"] {
+            padding: 0;
+            width: 38px;
+            height: 38px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+        }
+        .input-num { width: 100%; text-align: center; }
+
+        /* Custom Toggle Switch (Remplacement des cases à cocher vieillottes) */
+        .switch-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .switch-title { font-size: 10px; color: #aaa; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; }
+        .switch-bg {
+            width: 40px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .switch-handle {
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:checked + .switch-bg { background: #00ff88; }
+        input[type="checkbox"]:checked + .switch-bg.switch-red { background: #ff3366; }
+        input[type="checkbox"]:checked + .switch-bg .switch-handle { transform: translateX(20px); }
+
+        label { font-size: 11px; color: #888; display: block; margin-bottom: 4px; font-weight: 500;}
+
+        /* Pop-up standard */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 18, 18, 0.98);
+            border: 1px solid #333;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            z-index: 100;
+            min-width: 360px;
+        }
+        .close-popup-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .close-popup-btn:hover { color: #fff; }
+        .popup h2 { font-size: 24px; margin: 5px 0 15px 0; color: #888; font-weight: 500; }
+        .popup .winner-name { font-size: 40px; color: #00ff88; margin: 15px 0; font-weight: bold; word-break: break-all; }
+        .popup-btns { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
+        
+        .btn-action {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-reroll { background: #222; color: #00b3ff; border: 1px solid #00b3ff; }
+        .btn-reroll:hover { background: #00b3ff; color: #fff; }
+        .btn-eliminate { background: #222; color: #ff3366; border: 1px solid #ff3366; }
+        .btn-eliminate:hover { background: #ff3366; color: #fff; }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 99;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+            background: #1f1f1f;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #2d2d2d;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="siteHeader">
+        <h1>ROUE DE LA FORTUNE CREATOR</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="setup-panel" id="setupPanel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('tab-base')">Configuration</button>
+                <button class="tab-btn" onclick="switchTab('tab-advanced')">Paramètres Avancés</button>
+            </div>
+
+            <div id="tab-base" class="tab-content active">
+                <button class="btn" style="margin:0 0 20px 0; padding:10px 20px; font-size:14px;" onclick="addParticipant()">+ Ajouter Joueur</button>
+                <div id="participants-list"></div>
+            </div>
+
+            <div id="tab-advanced" class="tab-content">
+                <div class="setting-group">
+                    <label style="font-size:13px; color:#fff; margin-bottom:6px;">Temps de rotation (en secondes) :</label>
+                    <input type="number" id="spinDurationInput" value="4" min="1" max="20" style="width: 80px;" onchange="updateDuration(this.value)">
+                </div>
+
+                <div class="global-controls">
+                    <span style="font-weight: 600; color: #aaa;">Automatisation globale</span>
+                    <div style="display:flex; gap:20px;">
+                        <div style="text-align:center;">
+                            <span style="font-size:10px; color:#666; font-weight:600; text-transform:uppercase; margin-bottom:4px; display:block;">Reroll</span>
+                            <div class="global-btn-group">
+                                <button onclick="toggleAllAutomatons('autoReroll', true)">Tous</button>
+                                <button onclick="toggleAllAutomatons('autoReroll', false)"> Aucun</button>
+                            </div>
+                        </div>
+                        <div style="text-align:center;">
+                            <span style="font-size:10px; color:#666; font-weight:600; text-transform:uppercase; margin-bottom:4px; display:block;">Élimine</span>
+                            <div class="global-btn-group">
+                                <button onclick="toggleAllAutomatons('autoEliminate', true)">Tous</button>
+                                <button onclick="toggleAllAutomatons('autoEliminate', false)">Aucun</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="advanced-list"></div>
+            </div>
+        </div>
+
+        <div class="wheel-panel" id="wheelPanel">
+            <div class="wheel-outer-wrapper">
+                <div class="wheel-container">
+                    <div class="arrow"></div>
+                    <canvas id="wheelCanvas" width="600" height="600"></canvas>
+                </div>
+                <button class="fs-toggle-btn" id="fsToggleBtn" onclick="toggleFullscreenMode()" title="Plein Écran">⛶</button>
+            </div>
+            <button class="btn" id="spinBtn" onclick="spinWheel()">LANCER LA ROUE</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="popup" id="popup">
+        <button class="close-popup-btn" onclick="closePopup()">✕</button>
+        <h2>Victoire de</h2>
+        <div class="winner-name" id="winnerName">Joueur X</div>
+        <div class="popup-btns">
+            <button class="btn-action btn-reroll" onclick="triggerReroll()">Reroll</button>
+            <button class="btn-action btn-eliminate" onclick="eliminateWinner()">Éliminer</button>
+        </div>
+    </div>
+
+    <script>
+        let participants = [
+            { name: "Joueur 1", size: 1, percent: 25, color: "#ff3366", autoReroll: false, autoEliminate: false },
+            { name: "Joueur 2", size: 1, percent: 25, color: "#00b3ff", autoReroll: false, autoEliminate: false },
+            { name: "Joueur 3", size: 1, percent: 25, color: "#ffcc00", autoReroll: false, autoEliminate: false },
+            { name: "Joueur 4", size: 1, percent: 25, color: "#9933ff", autoReroll: false, autoEliminate: false }
+        ];
+
+        const defaultColors = ["#ff3366", "#00b3ff", "#ffcc00", "#9933ff", "#00ff88", "#ff6600", "#00ffff", "#ff00ff"];
+        const canvas = document.getElementById("wheelCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        let isSpinning = false;
+        let selectedIndex = null;
+        let spinDuration = 4;
+        let totalRotationsCount = 0;
+        let isFullscreenUI = false;
+
+        function init() {
+            renderInputs();
+            drawWheel();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function updateDuration(val) {
+            spinDuration = parseFloat(val) || 4;
+        }
+
+        // Gestion du mode Plein écran de l'interface
+        function toggleFullscreenMode() {
+            isFullscreenUI = !isFullscreenUI;
+            const elements = [document.getElementById('setupPanel'), document.getElementById('wheelPanel'), document.getElementById('siteHeader')];
+            
+            if (isFullscreenUI) {
+                elements[0].classList.add('fullscreen-active');
+                elements[1].classList.add('fullscreen-active');
+                elements[2].style.display = 'none';
+                document.getElementById('fsToggleBtn').innerText = "✕";
+                document.getElementById('fsToggleBtn').style.right = "20px";
+                document.getElementById('fsToggleBtn').style.top = "20px";
+            } else {
+                elements[0].classList.remove('fullscreen-active');
+                elements[1].classList.remove('fullscreen-active');
+                elements[2].style.display = 'flex';
+                document.getElementById('fsToggleBtn').innerText = "⛶";
+                document.getElementById('fsToggleBtn').style.removeProperty('right');
+                document.getElementById('fsToggleBtn').style.removeProperty('top');
+            }
+        }
+
+        function renderInputs() {
+            const list = document.getElementById("participants-list");
+            const advList = document.getElementById("advanced-list");
+            list.innerHTML = "";
+            advList.innerHTML = "";
+
+            participants.forEach((p, index) => {
+                // Rendu Onglet Base
+                const row = document.createElement("div");
+                row.className = "participant-row";
+                row.innerHTML = `
+                    <div>
+                        <label>Couleur</label>
+                        <input type="color" value="${p.color}" onchange="updateData(${index}, 'color', this.value)">
+                    </div>
+                    <div class="input-name">
+                        <label>Nom</label>
+                        <input type="text" value="${p.name}" style="width:100%; box-sizing:border-box;" onchange="updateData(${index}, 'name', this.value)">
+                    </div>
+                    <div style="width: 85px;">
+                        <label>Taille Part</label>
+                        <input type="number" class="input-num" value="${p.size}" min="0.001" step="any" onchange="updateData(${index}, 'size', parseFloat(this.value) || 0)">
+                    </div>
+                    <button style="background:none; border:none; color:#666; cursor:pointer; font-size:18px; margin-top:14px;" onclick="removeParticipant(${index})">✕</button>
+                `;
+                list.appendChild(row);
+
+                // Rendu Onglet Avancé (Design Moderne Épuré)
+                const advRow = document.createElement("div");
+                advRow.className = "adv-row";
+                advRow.innerHTML = `
+                    <span style="font-weight:600; color:${p.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</span>
+                    <div style="padding-right: 5px;">
+                        <label>Chance %</label>
+                        <input type="number" class="input-num" value="${p.percent}" min="0" max="100" step="any" onchange="updateData(${index}, 'percent', parseFloat(this.value) || 0)">
+                    </div>
+                    <label class="switch-label">
+                        <span class="switch-title">Reroll</span>
+                        <input type="checkbox" id="rr-${index}" ${p.autoReroll ? 'checked' : ''} onchange="updateData(${index}, 'autoReroll', this.checked)">
+                        <div class="switch-bg"><div class="switch-handle"></div></div>
+                    </label>
+                    <label class="switch-label">
+                        <span class="switch-title">Élimine</span>
+                        <input type="checkbox" id="ae-${index}" ${p.autoEliminate ? 'checked' : ''} onchange="updateData(${index}, 'autoEliminate', this.checked)">
+                        <div class="switch-bg switch-red"><div class="switch-handle"></div></div>
+                    </label>
+                `;
+                advList.appendChild(advRow);
+            });
+        }
+
+        function updateData(index, key, value) {
+            participants[index][key] = value;
+            drawWheel();
+            if(key === 'name' || key === 'color') {
+                renderInputs();
+            }
+        }
+
+        function toggleAllAutomatons(key, booleanValue) {
+            participants.forEach(p => p[key] = booleanValue);
+            renderInputs();
+        }
+
+        function addParticipant() {
+            const nextColor = defaultColors[participants.length % defaultColors.length];
+            participants.push({ name: "Joueur " + (participants.length + 1), size: 1, percent: 10, color: nextColor, autoReroll: false, autoEliminate: false });
+            renderInputs();
+            drawWheel();
+        }
+
+        function removeParticipant(index) {
+            if(participants.length > 1) {
+                participants.splice(index, 1);
+                renderInputs();
+                drawWheel();
+            }
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 8;
+
+            const totalSize = participants.reduce((sum, p) => sum + p.size, 0);
+            if(totalSize <= 0) return;
+
+            let startAngle = 0;
+
+            // Dessin des parts
+            participants.forEach((p) => {
+                const sliceAngle = (p.size / totalSize) * 2 * Math.PI;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#111111";
+                ctx.stroke();
+
+                if (sliceAngle > 0.08) {
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(startAngle + sliceAngle / 2);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "bold 15px Arial";
+                    ctx.shadowColor = "rgba(0,0,0,0.8)";
+                    ctx.shadowBlur = 5;
+                    ctx.fillText(p.name, radius / 2.2, 5);
+                    ctx.restore();
+                }
+
+                startAngle += sliceAngle;
+            });
+
+            // GROS POINT CENTRAL MODERNE (Cache les bavures au centre des lignes noires)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 32, 0, 2 * Math.PI);
+            ctx.fillStyle = "#111111"; // Coeur sombre
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#ffffff"; // Bordure blanche discrète
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = "#00ff88"; // Point vert central brillant
+            ctx.fill();
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+
+            const totalPercent = participants.reduce((sum, p) => sum + p.percent, 0);
+            if (totalPercent === 0) return alert("Le total des pourcentages doit être supérieur à 0 !");
+
+            const totalSize = participants.reduce((sum, p) => sum + p.size, 0);
+            if(totalSize <= 0) return alert("La taille totale des parts doit être supérieure à 0 !");
+
+            isSpinning = true;
+
+            let random = Math.random() * totalPercent;
+            let sum = 0;
+            let winnerIndex = 0;
+
+            for (let i = 0; i < participants.length; i++) {
+                sum += participants[i].percent;
+                if (random <= sum) {
+                    winnerIndex = i;
+                    break;
+                }
+            }
+            selectedIndex = winnerIndex;
+
+            let angleBeforeWinner = 0;
+            for(let i=0; i < winnerIndex; i++) {
+                angleBeforeWinner += (participants[i].size / totalSize) * 360;
+            }
+            let winnerSliceAngle = (participants[winnerIndex].size / totalSize) * 360;
+            let middleOfWinnerSlice = angleBeforeWinner + (winnerSliceAngle / 2);
+            
+            let targetAngleInDegrees = (270 - middleOfWinnerSlice);
+            if (targetAngleInDegrees < 0) {
+                targetAngleInDegrees += 360;
+            }
+
+            totalRotationsCount += 6; 
+            let finalSpinDegrees = (totalRotationsCount * 360) + targetAngleInDegrees;
+
+            canvas.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.8, 0.1, 1)`;
+            canvas.style.transform = `rotate(${finalSpinDegrees}deg)`;
+
+            setTimeout(() => {
+                const winner = participants[winnerIndex];
+                isSpinning = false;
+
+                if (winner.autoReroll) {
+                    if (winner.autoEliminate) {
+                        removeParticipant(winnerIndex);
+                    }
+                    setTimeout(() => { spinWheel(); }, 150);
+                    return; 
+                } 
+                
+                if (winner.autoEliminate) {
+                    document.getElementById("winnerName").innerText = winner.name + " (Éliminé)";
+                    document.getElementById("winnerName").style.color = winner.color;
+                    document.getElementById("overlay").style.display = "block";
+                    document.getElementById("popup").style.display = "block";
+                    removeParticipant(winnerIndex);
+                    return;
+                }
+
+                document.getElementById("winnerName").innerText = winner.name;
+                document.getElementById("winnerName").style.color = winner.color;
+                document.getElementById("overlay").style.display = "block";
+                document.getElementById("popup").style.display = "block";
+
+            }, spinDuration * 1000);
+        }
+
+        function closePopup() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("popup").style.display = "none";
+        }
+
+        function triggerReroll() {
+            closePopup();
+            setTimeout(() => { spinWheel(); }, 200);
+        }
+
+        function eliminateWinner() {
+            if(selectedIndex !== null) {
+                removeParticipant(selectedIndex);
+                selectedIndex = null;
+            }
+            closePopup();
+        }
+
+        init();
+    </script>
+</body>
+</html>
